@@ -551,3 +551,42 @@ button {
   z-index: 999;
   pointer-events: none;
 }
+
+#rotate-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #050912;
+  color: #eaf2ff;
+  text-align: center;
+  padding: 24px;
+}
+
+#rotate-overlay .rotate-icon {
+  font-size: 48px;
+  animation: rotate-hint 1.6s ease-in-out infinite;
+}
+
+#rotate-overlay .rotate-text {
+  font-size: 14px;
+  letter-spacing: 1px;
+  line-height: 1.6;
+  max-width: 260px;
+}
+
+@keyframes rotate-hint {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-90deg); }
+}
+
+/* Only touch devices genuinely rotated to landscape (not desktop windows, which are landscape by default). */
+@media (orientation: landscape) and (pointer: coarse) {
+  #rotate-overlay {
+    display: flex;
+  }
+}
