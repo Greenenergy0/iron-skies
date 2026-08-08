@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>IRON SKIES — Model Showroom</title>
+  </head>
+  <body>
+    <div id="showroom-app">
+      <div id="showroom-canvas-host"></div>
+      <div id="showroom-panel">
+        <div class="sr-header">
+          <div class="sr-title">MODEL SHOWROOM</div>
+          <a class="sr-back" href="./index.html">← 게임으로</a>
+        </div>
+
+        <div class="sr-section">
+          <div class="sr-section-title">커스텀 모델</div>
+          <label class="sr-file-btn">
+            .glb / .gltf 불러오기
+            <input type="file" id="model-file-input" accept=".glb,.gltf" />
+          </label>
+          <div class="sr-status" id="model-status">프로시저럴 모델 표시 중</div>
+          <button type="button" class="sr-btn" id="revert-model-btn">프로시저럴로 되돌리기</button>
+        </div>
+
+        <div class="sr-section">
+          <div class="sr-section-title">이동 감도</div>
+          <div class="sr-slider-row">
+            <label for="s-moveSpeedX">좌우 속도 <span id="v-moveSpeedX"></span></label>
+            <input type="range" id="s-moveSpeedX" min="2" max="26" step="0.5" />
+          </div>
+          <div class="sr-slider-row">
+            <label for="s-moveSpeedZ">전후 속도 <span id="v-moveSpeedZ"></span></label>
+            <input type="range" id="s-moveSpeedZ" min="2" max="26" step="0.5" />
+          </div>
+          <div class="sr-slider-row">
+            <label for="s-accelX">좌우 가속도 <span id="v-accelX"></span></label>
+            <input type="range" id="s-accelX" min="4" max="140" step="1" />
+          </div>
+          <div class="sr-slider-row">
+            <label for="s-accelZ">전후 가속도 <span id="v-accelZ"></span></label>
+            <input type="range" id="s-accelZ" min="4" max="140" step="1" />
+          </div>
+          <div class="sr-slider-row">
+            <label for="s-bank">뱅크(기울임) <span id="v-bank"></span></label>
+            <input type="range" id="s-bank" min="0" max="1.2" step="0.02" />
+          </div>
+          <div class="sr-slider-row">
+            <label for="s-pitch">피치(끄덕임) <span id="v-pitch"></span></label>
+            <input type="range" id="s-pitch" min="0" max="0.4" step="0.01" />
+          </div>
+          <div class="sr-slider-row">
+            <label for="s-scale">기체 크기 <span id="v-scale"></span></label>
+            <input type="range" id="s-scale" min="0.3" max="1.6" step="0.02" />
+          </div>
+        </div>
+
+        <div class="sr-actions">
+          <button type="button" class="sr-btn" id="reset-btn">기본값으로 리셋</button>
+          <button type="button" class="sr-btn sr-btn-accent" id="copy-btn">값 복사</button>
+        </div>
+        <pre class="sr-code" id="code-output"></pre>
+
+        <div class="sr-hint">
+          WASD / 방향키 — 비행 테스트<br />
+          마우스 드래그 — 카메라 회전 · 휠 — 줌
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/showroom.ts"></script>
+  </body>
+</html>
