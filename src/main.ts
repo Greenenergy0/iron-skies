@@ -21,6 +21,31 @@ function preventDoubleTapZoom(): void {
 }
 preventDoubleTapZoom();
 
+/**
+ * The whole page is the game surface — there's nothing to scroll. Blocking
+ * touchmove's default action stops the browser's own gestures (pull-to-refresh,
+ * edge-swipe tab/back navigation) from hijacking a downward drag mid-game.
+ * The joystick itself reads Pointer Events, which fire independently of this.
+ */
+document.addEventListener("touchmove", (event) => event.preventDefault(), { passive: false });
+
+/**
+ * Requests fullscreen (hides the browser chrome that a downward swipe would
+ * otherwise reveal) and locks the orientation to portrait-primary only, so
+ * flipping the phone upside-down can't mirror the display. Both APIs require
+ * a live user gesture, so this runs once on the first tap; both are silently
+ * unsupported on iOS Safari, where the equivalent is "Add to Home Screen".
+ */
+function enterImmersiveModeOnce(): void {
+  window.removeEventListener("pointerdown", enterImmersiveModeOnce);
+  const root = document.documentElement;
+  root
+    .requestFullscreen?.()
+    ?.then(() => screen.orientation?.lock?.("portrait-primary"))
+    .catch(() => {});
+}
+window.addEventListener("pointerdown", enterImmersiveModeOnce);
+
 const frame = document.getElementById("viewport-frame")!;
 const canvasHost = document.getElementById("canvas-host")!;
 const hudLayer = document.getElementById("hud-layer")!;
