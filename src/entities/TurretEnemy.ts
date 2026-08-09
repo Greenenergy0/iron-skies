@@ -7,6 +7,7 @@ const FIRE_INTERVAL_MIN = 1.6;
 const FIRE_INTERVAL_MAX = 2.4;
 const BULLET_SPEED = 6.2;
 const AIM_RANGE_Z = 16;
+const SCALE = 0.78;
 
 /** World-fixed ground/deck turret: doesn't fly, just sits and tracks/fires as the world scrolls past. */
 export class TurretEnemy extends Enemy {
@@ -17,10 +18,11 @@ export class TurretEnemy extends Enemy {
 
   constructor(scene: THREE.Scene, bulletManager: EnemyBulletManager, spawnX: number, spawnZ: number, speedScale = 1) {
     const { group, head } = createTurret();
+    group.scale.setScalar(SCALE);
     group.position.set(spawnX, 0.05, spawnZ);
     scene.add(group);
 
-    super(group, 0.48, 3, 180);
+    super(group, 0.48 * SCALE, 3, 180);
     this.head = head;
     this.fireTimer = FIRE_INTERVAL_MIN + Math.random() * (FIRE_INTERVAL_MAX - FIRE_INTERVAL_MIN);
     this.bulletManager = bulletManager;
@@ -41,7 +43,7 @@ export class TurretEnemy extends Enemy {
       aimDir.y = 0;
       if (aimDir.lengthSq() > 0.0001) aimDir.normalize();
       else aimDir.set(0, 0, 1);
-      const spawnPos = this.group.position.clone().add(new THREE.Vector3(0, 0.3, 0)).addScaledVector(aimDir, 0.5);
+      const spawnPos = this.group.position.clone().add(new THREE.Vector3(0, 0.3 * SCALE, 0)).addScaledVector(aimDir, 0.5 * SCALE);
       this.bulletManager.spawn(spawnPos, aimDir.multiplyScalar(BULLET_SPEED * this.speedScale));
     }
   }

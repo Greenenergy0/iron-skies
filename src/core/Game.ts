@@ -53,7 +53,7 @@ const DROP_TABLE: { kind: PowerupKind; weight: number }[] = [
 const DROP_CHANCE = 0.55;
 
 /** Enemy move/bullet-speed multiplier per stage — stage 1 starts noticeably gentler and climbs through stage 10. */
-const STAGE_SPEED_SCALE = [0.82, 0.98, 1.08, 1.2, 1.3, 1.38, 1.46, 1.53, 1.6, 1.68];
+const STAGE_SPEED_SCALE = [0.92, 1.1, 1.21, 1.34, 1.45, 1.54, 1.63, 1.71, 1.79, 1.88];
 
 interface DisposableMenu {
   dispose(): void;

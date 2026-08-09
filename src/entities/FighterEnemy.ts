@@ -9,7 +9,7 @@ const WEAVE_FREQUENCY = 1.3;
 const FIRE_INTERVAL_MIN = 1.4;
 const FIRE_INTERVAL_MAX = 2.4;
 const BULLET_SPEED = 6.5;
-const SCALE = 0.72;
+const SCALE = 0.6;
 
 /** A weaving fighter that advances toward the player and takes periodic shots. */
 export class FighterEnemy extends Enemy {

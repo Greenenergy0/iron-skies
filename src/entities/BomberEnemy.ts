@@ -9,7 +9,7 @@ const FIRE_INTERVAL_MAX = 3.0;
 const BULLET_SPEED = 5.4;
 const SPREAD_COUNT = 3;
 const SPREAD_ANGLE = 0.32;
-const SCALE = 1.15;
+const SCALE = 0.95;
 
 /** Slow, tanky bomber that advances almost straight and drops a bullet spread. */
 export class BomberEnemy extends Enemy {
