@@ -8,12 +8,12 @@ import { loadCustomModel, setProceduralPartsVisible } from "../core/CustomModelL
 import type { Enemy } from "./Enemy";
 import type { Bullet } from "./Bullet";
 
-// Custom player model (calibrated in the tuning showroom against this specific file):
-// native forward axis is +X and it's authored at real-world (meter) scale. Rotating +90°
-// about Y maps local +X to world -Z, matching this game's forward convention.
+// Custom player model: authored at real-world (meter) scale, length axis is X but the nose
+// actually sits at the -X end (confirmed visually — the +90° guess had it flying tail-first).
+// Rotating -90° about Y maps local -X (nose) to world -Z, matching this game's forward convention.
 const CUSTOM_MODEL_URL = `${import.meta.env.BASE_URL}models/harrier_gr7.glb`;
 const CUSTOM_MODEL_WORLD_SCALE = 0.115;
-const CUSTOM_MODEL_ROTATION_Y = Math.PI / 2;
+const CUSTOM_MODEL_ROTATION_Y = -Math.PI / 2;
 const CUSTOM_MODEL_LOCAL_Y_OFFSET = -2.05;
 
 export interface PlayerTuning {
