@@ -29,6 +29,13 @@ const TWIN_TURRETS = [
   { x: 1.5, z: 0.3 },
 ];
 
+const QUAD_TURRETS = [
+  { x: -1.6, z: 0.45 },
+  { x: 1.6, z: 0.45 },
+  { x: -1.6, z: -0.55 },
+  { x: 1.6, z: -0.55 },
+];
+
 export const STAGE_1: StageDefinition = {
   id: 1,
   name: "STAGE 1 - COASTAL WATERS",
@@ -219,14 +226,163 @@ export const STAGE_4: StageDefinition = {
     hullColor: 0x3a1418,
     turretColor: 0x1c0a0c,
     hpMultiplier: 2.3,
-    turretOffsets: [
-      { x: -1.6, z: 0.45 },
-      { x: 1.6, z: 0.45 },
-      { x: -1.6, z: -0.55 },
-      { x: 1.6, z: -0.55 },
-    ],
-    final: true,
+    turretOffsets: QUAD_TURRETS,
   },
 };
 
-export const STAGES: StageDefinition[] = [STAGE_1, STAGE_2, STAGE_3, STAGE_4];
+// --- Stages 5-10: procedurally generated, deterministic (seeded), escalating
+// spawn density / enemy toughness mix as the tier rises. ---
+
+function mulberry32(seed: number): () => number {
+  let a = seed;
+  return function random() {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function pickWeighted<T>(rng: () => number, entries: { value: T; weight: number }[]): T {
+  const total = entries.reduce((sum, e) => sum + e.weight, 0);
+  let roll = rng() * total;
+  for (const entry of entries) {
+    if (roll < entry.weight) return entry.value;
+    roll -= entry.weight;
+  }
+  return entries[entries.length - 1].value;
+}
+
+function rangeRng(rng: () => number, min: number, max: number): number {
+  return min + rng() * (max - min);
+}
+
+/** tier 1 = easiest generated stage (stage 5) .. tier 6 = hardest (stage 10). */
+function buildGeneratedWaves(seed: number, tier: number): WaveEntry[] {
+  const rng = mulberry32(seed);
+  const waves: WaveEntry[] = [];
+  const duration = 33 + tier * 1.6;
+  const gapMin = Math.max(0.55, 1.3 - tier * 0.1);
+  const gapMax = Math.max(1.05, 2.2 - tier * 0.13);
+  const kindWeights: { value: EnemyKind; weight: number }[] = [
+    { value: "fighter", weight: Math.max(4, 11 - tier) },
+    { value: "turret", weight: 3 + tier * 0.7 },
+    { value: "bomber", weight: 2 + tier * 0.8 },
+    { value: "ship", weight: 2 + tier * 0.6 },
+  ];
+
+  let t = rangeRng(rng, 0.9, 1.4);
+  while (t < duration) {
+    const roll = rng();
+    if (roll < 0.28 + tier * 0.02) {
+      // Squad burst: 3-5 of the same kind fanned across the play width.
+      const kind = pickWeighted(rng, kindWeights);
+      const count = 3 + Math.floor(rng() * 3);
+      for (let i = 0; i < count; i++) {
+        const x = -2.5 + (i / (count - 1)) * 5;
+        waves.push({ time: Number((t + i * 0.3).toFixed(2)), kind, x: Number(x.toFixed(2)) });
+      }
+      t += count * 0.3 + rangeRng(rng, gapMin, gapMax);
+    } else if (roll < 0.62) {
+      // Mirrored pair.
+      const kind = pickWeighted(rng, kindWeights);
+      const x = rangeRng(rng, 0.8, 2.5);
+      waves.push({ time: Number(t.toFixed(2)), kind, x: Number((-x).toFixed(2)) });
+      waves.push({ time: Number(t.toFixed(2)), kind, x: Number(x.toFixed(2)) });
+      t += rangeRng(rng, gapMin, gapMax);
+    } else {
+      // Single spawn.
+      const kind = pickWeighted(rng, kindWeights);
+      const x = rangeRng(rng, -2.5, 2.5);
+      waves.push({ time: Number(t.toFixed(2)), kind, x: Number(x.toFixed(2)) });
+      t += rangeRng(rng, gapMin, gapMax);
+    }
+  }
+  return waves;
+}
+
+interface GeneratedStageSpec {
+  id: number;
+  name: string;
+  seaColor: number;
+  fogColor: number;
+  seed: number;
+  tier: number;
+  boss: BossConfig;
+}
+
+const GENERATED_STAGE_SPECS: GeneratedStageSpec[] = [
+  {
+    id: 5,
+    name: "STAGE 5 - TWILIGHT REEF",
+    seaColor: 0x1a3a5a,
+    fogColor: 0x160a26,
+    seed: 5001,
+    tier: 1,
+    boss: { name: "OBSIDIAN REAPER", hullColor: 0x1c1c26, turretColor: 0x0d0d14, hpMultiplier: 2.6, turretOffsets: TWIN_TURRETS },
+  },
+  {
+    id: 6,
+    name: "STAGE 6 - GHOST FLEET",
+    seaColor: 0x2a2a3e,
+    fogColor: 0x0a0a14,
+    seed: 6001,
+    tier: 2,
+    boss: { name: "GHOST ADMIRAL", hullColor: 0x3c4c56, turretColor: 0x1c282c, hpMultiplier: 2.9, turretOffsets: TWIN_TURRETS },
+  },
+  {
+    id: 7,
+    name: "STAGE 7 - MOLTEN STRAIT",
+    seaColor: 0x5a2c12, /* mostly-lava reflection tint */
+    fogColor: 0x220b05,
+    seed: 7001,
+    tier: 3,
+    boss: { name: "MOLTEN WARLORD", hullColor: 0x5c2812, turretColor: 0x2c1206, hpMultiplier: 3.3, turretOffsets: TWIN_TURRETS },
+  },
+  {
+    id: 8,
+    name: "STAGE 8 - AZURE DEPTHS",
+    seaColor: 0x0a3358,
+    fogColor: 0x051022,
+    seed: 8001,
+    tier: 4,
+    boss: { name: "AZURE PHANTOM", hullColor: 0x1a3a5e, turretColor: 0x0d1c2e, hpMultiplier: 3.7, turretOffsets: TWIN_TURRETS },
+  },
+  {
+    id: 9,
+    name: "STAGE 9 - SCARLET HORIZON",
+    seaColor: 0x4a0e20,
+    fogColor: 0x1f050a,
+    seed: 9001,
+    tier: 5,
+    boss: { name: "SCARLET DOMINION", hullColor: 0x5a1624, turretColor: 0x2c0a12, hpMultiplier: 4.1, turretOffsets: TWIN_TURRETS },
+  },
+  {
+    id: 10,
+    name: "STAGE 10 - ETERNAL ABYSS",
+    seaColor: 0x120616,
+    fogColor: 0x07030a,
+    seed: 10001,
+    tier: 6,
+    boss: {
+      name: "ETERNAL ABYSS",
+      hullColor: 0x160616,
+      turretColor: 0x0a030c,
+      hpMultiplier: 4.6,
+      turretOffsets: QUAD_TURRETS,
+      final: true,
+    },
+  },
+];
+
+const GENERATED_STAGES: StageDefinition[] = GENERATED_STAGE_SPECS.map((spec) => ({
+  id: spec.id,
+  name: spec.name,
+  seaColor: spec.seaColor,
+  fogColor: spec.fogColor,
+  waves: buildGeneratedWaves(spec.seed, spec.tier),
+  boss: spec.boss,
+}));
+
+export const STAGES: StageDefinition[] = [STAGE_1, STAGE_2, STAGE_3, STAGE_4, ...GENERATED_STAGES];
