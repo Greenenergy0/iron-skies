@@ -134,7 +134,9 @@ export function createFighterPlane(scheme: PlaneColorScheme): FighterPlane {
 
   group.traverse((child) => {
     if (child instanceof THREE.Mesh) child.castShadow = true;
-    child.userData.proceduralPart = true;
+    // traverse() visits the root group itself first — skip it, or a later custom-model swap's
+    // setProceduralPartsVisible(root, false) would hide the whole group (including the new model).
+    if (child !== group) child.userData.proceduralPart = true;
   });
 
   return { group, propeller: propGroup, hullMaterial: hullMat, accentMaterial: accentMat };
@@ -444,7 +446,8 @@ export function createTurret(bodyColor = 0x5e6a4f): Turret {
   group.add(head);
 
   group.traverse((child) => {
-    child.userData.proceduralPart = true;
+    // Skip the root group itself — see the matching comment in createFighterPlane above.
+    if (child !== group) child.userData.proceduralPart = true;
   });
 
   return { group, head };
