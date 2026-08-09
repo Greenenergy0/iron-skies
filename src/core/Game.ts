@@ -113,8 +113,10 @@ export class Game {
     this.highScore = getHighScore();
     audio.setTrack("menu");
 
+    // Pause itself is handled once via InputManager's pauseFlag -> inputState.pausePressed
+    // in update() below; a duplicate direct listener here would double-toggle it (pause then
+    // immediately un-pause within the same frame), which is why P looked like it "didn't work".
     window.addEventListener("keydown", (e) => {
-      if (e.code === "KeyP" || e.code === "Escape") this.togglePause();
       if (e.code === "KeyR" && this.state === "gameover") this.restart();
     });
 
