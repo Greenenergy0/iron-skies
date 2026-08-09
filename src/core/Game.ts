@@ -67,6 +67,7 @@ export class Game {
   private state: GameState = "boot";
   private lastTime = 0;
   private rafHandle = 0;
+  private orientationBlocked = false;
 
   private scrollZ = 0;
   private terrain: Terrain;
@@ -117,8 +118,23 @@ export class Game {
       if (e.code === "KeyR" && this.state === "gameover") this.restart();
     });
 
+    this.setupOrientationGuard();
     this.showMainMenu();
     this.rafHandle = requestAnimationFrame(this.loop);
+  }
+
+  /**
+   * The game is portrait-only. Rather than squashing the 3D scene into a
+   * landscape frame (which reads as the whole screen "switching"), freeze
+   * the loop and let the CSS rotate-overlay cover the screen until the
+   * player rotates back.
+   */
+  private setupOrientationGuard(): void {
+    const query = window.matchMedia("(orientation: landscape) and (pointer: coarse)");
+    this.orientationBlocked = query.matches;
+    query.addEventListener("change", (e) => {
+      this.orientationBlocked = e.matches;
+    });
   }
 
   setState(state: GameState): void {
@@ -222,8 +238,10 @@ export class Game {
   private loop = (time: number): void => {
     const dt = this.lastTime ? Math.min((time - this.lastTime) / 1000, 1 / 30) : 0;
     this.lastTime = time;
-    this.update(dt);
-    this.sceneManager.render();
+    if (!this.orientationBlocked) {
+      this.update(dt);
+      this.sceneManager.render();
+    }
     this.rafHandle = requestAnimationFrame(this.loop);
   };
 
