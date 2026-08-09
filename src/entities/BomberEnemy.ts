@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Enemy } from "./Enemy";
 import { createFighterPlane } from "../core/AssetFactory";
+import { loadCustomModel, setProceduralPartsVisible } from "../core/CustomModelLoader";
 import type { EnemyBulletManager } from "./EnemyBullet";
 
 const ADVANCE_SPEED = 1.8;
@@ -10,6 +11,14 @@ const BULLET_SPEED = 5.4;
 const SPREAD_COUNT = 3;
 const SPREAD_ANGLE = 0.32;
 const SCALE = 0.95;
+
+// Custom model: off-center (rigged pilot interior skews the raw bounding box), native forward
+// axis is +X. Recentered via offset, then rotated +90° about Y to match the procedural nose
+// direction (composes with the group's 180° "face the player" flip below).
+const CUSTOM_MODEL_URL = `${import.meta.env.BASE_URL}models/wwii_soviet_plane_with_interior.glb`;
+const CUSTOM_MODEL_WORLD_SCALE = 0.0085;
+const CUSTOM_MODEL_ROTATION_Y = Math.PI / 2;
+const CUSTOM_MODEL_OFFSET = new THREE.Vector3(0, -23.83, 14.89);
 
 /** Slow, tanky bomber that advances almost straight and drops a bullet spread. */
 export class BomberEnemy extends Enemy {
@@ -38,6 +47,19 @@ export class BomberEnemy extends Enemy {
     this.fireTimer = FIRE_INTERVAL_MIN + Math.random() * (FIRE_INTERVAL_MAX - FIRE_INTERVAL_MIN);
     this.bulletManager = bulletManager;
     this.speedScale = speedScale;
+
+    loadCustomModel(
+      {
+        url: CUSTOM_MODEL_URL,
+        rotationY: CUSTOM_MODEL_ROTATION_Y,
+        scale: CUSTOM_MODEL_WORLD_SCALE / SCALE,
+        offset: CUSTOM_MODEL_OFFSET,
+      },
+      (wrapper) => {
+        setProceduralPartsVisible(group, false);
+        group.add(wrapper);
+      },
+    );
   }
 
   protected updatePattern(dt: number, playerPos: THREE.Vector3): void {

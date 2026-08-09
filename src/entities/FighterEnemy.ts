@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Enemy } from "./Enemy";
 import { createFighterPlane } from "../core/AssetFactory";
+import { loadCustomModel, setProceduralPartsVisible } from "../core/CustomModelLoader";
 import type { EnemyBulletManager } from "./EnemyBullet";
 
 const ADVANCE_SPEED = 3.2;
@@ -10,6 +11,14 @@ const FIRE_INTERVAL_MIN = 1.4;
 const FIRE_INTERVAL_MAX = 2.4;
 const BULLET_SPEED = 6.5;
 const SCALE = 0.6;
+
+// Custom model: centered near origin, native forward axis is +X. Rotating +90° about Y maps
+// local +X to local -Z, matching the procedural model's native nose direction — so it composes
+// correctly with the group's existing 180° "face the player" flip below.
+const CUSTOM_MODEL_URL = `${import.meta.env.BASE_URL}models/plane_pc.glb`;
+const CUSTOM_MODEL_WORLD_SCALE = 0.0152;
+const CUSTOM_MODEL_ROTATION_Y = Math.PI / 2;
+const CUSTOM_MODEL_OFFSET = new THREE.Vector3(0, -0.05, 0.17);
 
 /** A weaving fighter that advances toward the player and takes periodic shots. */
 export class FighterEnemy extends Enemy {
@@ -40,6 +49,19 @@ export class FighterEnemy extends Enemy {
     this.fireTimer = FIRE_INTERVAL_MIN + Math.random() * (FIRE_INTERVAL_MAX - FIRE_INTERVAL_MIN);
     this.bulletManager = bulletManager;
     this.speedScale = speedScale;
+
+    loadCustomModel(
+      {
+        url: CUSTOM_MODEL_URL,
+        rotationY: CUSTOM_MODEL_ROTATION_Y,
+        scale: CUSTOM_MODEL_WORLD_SCALE / SCALE,
+        offset: CUSTOM_MODEL_OFFSET,
+      },
+      (wrapper) => {
+        setProceduralPartsVisible(group, false);
+        group.add(wrapper);
+      },
+    );
   }
 
   protected updatePattern(dt: number, playerPos: THREE.Vector3): void {

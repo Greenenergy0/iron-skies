@@ -1,20 +1,20 @@
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { InputState } from "../core/InputManager";
 import { createFighterPlane } from "../core/AssetFactory";
 import { PLAYFIELD_HALF_WIDTH } from "../core/SceneManager";
 import { clamp, approach } from "../utils/MathUtils";
 import { WeaponSystem } from "../systems/WeaponSystem";
+import { loadCustomModel, setProceduralPartsVisible } from "../core/CustomModelLoader";
 import type { Enemy } from "./Enemy";
 import type { Bullet } from "./Bullet";
 
 // Custom player model (calibrated in the tuning showroom against this specific file):
-// native forward axis is +X and it's authored at real-world (meter) scale.
+// native forward axis is +X and it's authored at real-world (meter) scale. Rotating +90°
+// about Y maps local +X to world -Z, matching this game's forward convention.
 const CUSTOM_MODEL_URL = `${import.meta.env.BASE_URL}models/harrier_gr7.glb`;
 const CUSTOM_MODEL_WORLD_SCALE = 0.115;
-const CUSTOM_MODEL_ROTATION_Y = -Math.PI / 2;
+const CUSTOM_MODEL_ROTATION_Y = Math.PI / 2;
 const CUSTOM_MODEL_LOCAL_Y_OFFSET = -2.05;
-const gltfLoader = new GLTFLoader();
 
 export interface PlayerTuning {
   moveSpeedX: number;
@@ -103,26 +103,16 @@ export class Player {
 
   /** Best-effort swap to the custom .glb model; silently keeps the procedural plane if it fails to load. */
   private loadCustomModel(): void {
-    gltfLoader.load(
-      CUSTOM_MODEL_URL,
-      (gltf) => {
-        const inner = gltf.scene;
-        inner.rotation.y = CUSTOM_MODEL_ROTATION_Y;
-        inner.position.set(0, CUSTOM_MODEL_LOCAL_Y_OFFSET, 0);
-        inner.traverse((child) => {
-          if (child instanceof THREE.Mesh) child.castShadow = true;
-        });
-
-        const wrapper = new THREE.Group();
-        wrapper.scale.setScalar(CUSTOM_MODEL_WORLD_SCALE / PLAYER_SCALE);
-        wrapper.add(inner);
-
+    loadCustomModel(
+      {
+        url: CUSTOM_MODEL_URL,
+        rotationY: CUSTOM_MODEL_ROTATION_Y,
+        scale: CUSTOM_MODEL_WORLD_SCALE / PLAYER_SCALE,
+        offset: new THREE.Vector3(0, CUSTOM_MODEL_LOCAL_Y_OFFSET, 0),
+      },
+      (wrapper) => {
         this.setProceduralModelVisible(false);
         this.group.add(wrapper);
-      },
-      undefined,
-      () => {
-        // No custom model available (or failed to load) — the procedural plane stays visible.
       },
     );
   }
@@ -146,9 +136,7 @@ export class Player {
 
   /** Shows/hides just the procedural aircraft meshes (tagged in AssetFactory), leaving the shield and any swapped-in custom model untouched. */
   setProceduralModelVisible(visible: boolean): void {
-    this.group.traverse((child) => {
-      if (child.userData.aircraftPart) child.visible = visible;
-    });
+    setProceduralPartsVisible(this.group, visible);
   }
 
   update(dt: number, input: InputState, scrollZ: number, enemies: Enemy[]): void {

@@ -134,7 +134,7 @@ export function createFighterPlane(scheme: PlaneColorScheme): FighterPlane {
 
   group.traverse((child) => {
     if (child instanceof THREE.Mesh) child.castShadow = true;
-    child.userData.aircraftPart = true;
+    child.userData.proceduralPart = true;
   });
 
   return { group, propeller: propGroup, hullMaterial: hullMat, accentMaterial: accentMat };
@@ -442,6 +442,10 @@ export function createTurret(bodyColor = 0x5e6a4f): Turret {
   head.add(barrel);
 
   group.add(head);
+
+  group.traverse((child) => {
+    child.userData.proceduralPart = true;
+  });
 
   return { group, head };
 }

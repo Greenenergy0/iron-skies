@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Enemy } from "./Enemy";
 import { createTurret } from "../core/AssetFactory";
+import { loadCustomModel, setProceduralPartsVisible } from "../core/CustomModelLoader";
 import type { EnemyBulletManager } from "./EnemyBullet";
 
 const FIRE_INTERVAL_MIN = 1.6;
@@ -9,9 +10,18 @@ const BULLET_SPEED = 6.2;
 const AIM_RANGE_Z = 16;
 const SCALE = 0.78;
 
+// Custom model: hull is already centered near local origin and sits on the ground at y=0 (no
+// offset needed). Native gun-forward axis is +X; rotating -90° about Y maps it to local +Z,
+// matching the aim formula's "local +Z = forward" convention (same one the procedural barrel
+// uses) — so the same dynamic aimAngle can just be added on top each frame.
+const CUSTOM_MODEL_URL = `${import.meta.env.BASE_URL}models/t-34-85_victory.glb`;
+const CUSTOM_MODEL_WORLD_SCALE = 0.15;
+const CUSTOM_MODEL_ROTATION_Y = -Math.PI / 2;
+
 /** World-fixed ground/deck turret: doesn't fly, just sits and tracks/fires as the world scrolls past. */
 export class TurretEnemy extends Enemy {
   private head: THREE.Group;
+  private customWrapper: THREE.Group | null = null;
   private fireTimer: number;
   private bulletManager: EnemyBulletManager;
   private speedScale: number;
@@ -27,13 +37,31 @@ export class TurretEnemy extends Enemy {
     this.fireTimer = FIRE_INTERVAL_MIN + Math.random() * (FIRE_INTERVAL_MAX - FIRE_INTERVAL_MIN);
     this.bulletManager = bulletManager;
     this.speedScale = speedScale;
+
+    loadCustomModel(
+      {
+        url: CUSTOM_MODEL_URL,
+        rotationY: CUSTOM_MODEL_ROTATION_Y,
+        scale: CUSTOM_MODEL_WORLD_SCALE / SCALE,
+      },
+      (wrapper) => {
+        setProceduralPartsVisible(group, false);
+        group.add(wrapper);
+        this.customWrapper = wrapper;
+      },
+    );
   }
 
   protected updatePattern(dt: number, playerPos: THREE.Vector3): void {
     const dir = new THREE.Vector3().subVectors(playerPos, this.group.position);
     const inRange = Math.abs(dir.z) < AIM_RANGE_Z;
     if (inRange) {
-      this.head.rotation.y = Math.atan2(dir.x, dir.z);
+      const aimAngle = Math.atan2(dir.x, dir.z);
+      if (this.customWrapper) {
+        this.customWrapper.rotation.y = CUSTOM_MODEL_ROTATION_Y + aimAngle;
+      } else {
+        this.head.rotation.y = aimAngle;
+      }
     }
 
     this.fireTimer -= dt;
